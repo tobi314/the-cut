@@ -52,6 +52,7 @@ def calc_table(protease): #gets data from sql, returns a dictionary of how many 
     command = "SELECT Site_P4, Site_P3, Site_P2, Site_P1, Site_P1prime, Site_P2prime, Site_P3prime, Site_P4prime FROM Substrate_search WHERE Protease = '{0}'".format(protease)
     cursor.execute(command)
     data_list = cursor.fetchall()
+    
     if data_list: #checks if sql returned something
         p_data = {} #writes data from sql to a dictionary
         for v in CODES.values():
@@ -62,7 +63,15 @@ def calc_table(protease): #gets data from sql, returns a dictionary of how many 
         #print(data_list)
     else:
         raise ValueError("Protease named {0} not found".format(protease))
+    
     return p_data
+
+def get_sequence_from_str(string): #isolates sequence (---MHLLG) from sequence string (1/---MHLLG/8)
+    sequence = ""
+    for char in string:
+        if char in CODES.values():
+            sequence += char
+    return sequence
 
 def lookup(protease, sequence_file, file_format="fasta"): #main function
     sequence = str(next(SeqIO.parse(open(sequence_file), file_format)).seq)
@@ -71,11 +80,13 @@ def lookup(protease, sequence_file, file_format="fasta"): #main function
          
     cut_dict = {} #creates a dict of all possible cuts and a list of how many times the protease cuts the sequence after that amino-acid
     for i in range(3, len(sequence)-4):
-        p_string = sequence[i-3:i+5]
+        seq_string = str(i-2) + "/" + sequence[i-3:i+5] + "/" + str(i+5)
+        p_string = get_sequence_from_str(seq_string)
+        print(p_string)
         l = []
         for j in range(len(p_string)):
             l.append(protease_data[p_string[j]][j])
-        cut_dict[p_string] = l
+        cut_dict[seq_string] = l
     #print(cut_dict)
         
     scoredict = score(cut_dict) #scores each cut according to likelihood
@@ -84,5 +95,4 @@ def lookup(protease, sequence_file, file_format="fasta"): #main function
 
 if __name__ == "__main__":
     #demo
-    #data_list = lookup('kallikrein-related peptidase 3', "MYREWVVVNVFMMLYVQLVQGSSNEHGPVKRSSQSTLERSEQQIRAASSLEELLRITHSEDWKLWRCRLRLKSFTSMDSRSASHRSTRFAATFYDIETLKVIDEEWQRTQCSPRETCVEVASELGKSTNTFFKPPCVNVFRCGGCCNEESLICMNTSTSYISKQLFEISVPLTSVPELVPVKVANHTGCKCLPTAPRHPYSIIRRSIQIPEEDRCSHSKKLCPIDMLWDSNKCKCVLQEENPLAGTEDHSHLQEPALCGPHMMFDEDRCECVCKTPCPKDLIQHPKNCSCFECKESLETCCQKHKLFHPDTCSCEDRCPFHTRPCASGKTACAKHCRFPKEKRAAQGPHSRKNP")
     data_list = lookup('kallikrein-related peptidase 3', "../taksvärkki.old/P49767.fasta")
