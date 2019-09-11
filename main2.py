@@ -83,7 +83,7 @@ def calc_table(protease): #gets data from sql, returns a dictionary of how many 
     
     return p_data
 
-def get_sequence_from_str(string): #isolates sequence (e.g. "---MHLLG") from sequence string (e.g. "1/---MHLLG/8)
+def get_sequence_from_str(string): #isolates sequence (e.g. "---MHLLG") from sequence string (e.g. "1/---MHLLG/8")
     sequence = ""
     for char in string:
         if char in CODES.values():
@@ -91,6 +91,14 @@ def get_sequence_from_str(string): #isolates sequence (e.g. "---MHLLG") from seq
     if "-" in sequence[:4]:
         sequence = sequence[1:]
     return sequence
+
+def get_number_from_str(string): #isolates number (e.g. 1) from sequence string (e.g. "1/---MHLLG/8")
+    half = string[:int(len(string)/2)]
+    i_list = list(filter(str.isdigit, half))
+    number = ""
+    for i in i_list:
+        number += i
+    return int(number)
 
 def lookup(protease, sequence_file, file_format="fasta", **kwargs): #main function
     sequence = str(next(SeqIO.parse(open(sequence_file), file_format)).seq)
@@ -111,9 +119,18 @@ def lookup(protease, sequence_file, file_format="fasta", **kwargs): #main functi
     #print(cut_dict)
         
     scoredict = new_score(cut_dict) #scores each cut according to likelihood
-    print_results(scoredict) #prints the rusults
+    #print(scoredict)
+
+    if "nocut" in kwargs:
+        filtered = {}
+        for (key, value) in scoredict.items():
+            if int(get_number_from_str(key)) >= kwargs["nocut"]-2:
+                filtered[key] = value
+        scoredict = filtered
+    
+    print_results(scoredict) #prints the results
     return scoredict
 
 if __name__ == "__main__":
     #demo
-    data_list = lookup('kallikrein-related peptidase 3', "../taksvärkki.old/P49767.fasta")
+    data_list = lookup('kallikrein-related peptidase 3', "../taksvärkki.old/P49767.fasta", nocut=21)
