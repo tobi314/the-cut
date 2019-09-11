@@ -30,10 +30,19 @@ def print_results(r): #sorts results according to score, prints them
     sorted_r = sorted(r.items(), key=operator.itemgetter(1))
     print(sorted_r[::-1])
 
-def score(data_list): #assigns each cut in data_list a score how likely that cut is
+def score(data_list): #assigns each cut in data_list a score according to how likely that cut is
     scoredict = {}
     for k in data_list.keys():
+        #print(data_list[k])
         scoredict[k] = data_list[k][3] + data_list[k][4]
+    return scoredict
+
+def new_score(data_list): #assigns each cut in data_list a score according to how likely that cut is (new system)
+    scoredict = {}
+    for k in data_list.keys():
+        x = data_list[k]
+        #print(x)
+        scoredict[k] = 1*x[3]*x[4] + 0.5*x[2]*x[5] + 0.25*x[1]*x[6] + 0.125*x[0]*x[7]
     return scoredict
 
 def get_data(protease, data): #checks if data is in data.py, adds data to data.py if it's not, returns data
@@ -66,21 +75,25 @@ def calc_table(protease): #gets data from sql, returns a dictionary of how many 
     
     return p_data
 
-def get_sequence_from_str(string): #isolates sequence (---MHLLG) from sequence string (1/---MHLLG/8)
+def get_sequence_from_str(string): #isolates sequence (e.g. "---MHLLG") from sequence string (e.g. "1/---MHLLG/8)
     sequence = ""
     for char in string:
         if char in CODES.values():
             sequence += char
+    if "-" in sequence[:4]:
+        sequence = sequence[1:]
     return sequence
 
-def lookup(protease, sequence_file, file_format="fasta"): #main function
+def lookup(protease, sequence_file, file_format="fasta", **kwargs): #main function
     sequence = str(next(SeqIO.parse(open(sequence_file), file_format)).seq)
     sequence = "---" + sequence + "---"
     protease_data = get_data(protease, data) #gets data
+    #print(len(sequence))
          
     cut_dict = {} #creates a dict of all possible cuts and a list of how many times the protease cuts the sequence after that amino-acid
     for i in range(3, len(sequence)-4):
-        seq_string = str(i-2) + "/" + sequence[i-3:i+5] + "/" + str(i+5)
+        seq_string = str(i-6) + "/" + sequence[i-3:i+5] + "/" + str(i+2)
+        print(seq_string)
         p_string = get_sequence_from_str(seq_string)
         print(p_string)
         l = []
