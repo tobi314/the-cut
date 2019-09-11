@@ -49,7 +49,7 @@ def get_data(protease, data): #checks if data is in data.py, adds data to data.p
     return data.data[protease]
 
 def calc_table(protease): #gets data from sql, returns a dictionary of how many times the protease cuts after each specific amino-acid
-    conn = MySQLdb.connect(host='localhost',user='root',passwd='SH01m7n9i_.', db='merops121')
+    conn = MySQLdb.connect(host='localhost',user='root',passwd='xxxxxxx', db='merops121')
     cursor = conn.cursor()
     command = "SELECT Site_P4, Site_P3, Site_P2, Site_P1, Site_P1prime, Site_P2prime, Site_P3prime, Site_P4prime FROM Substrate_search WHERE Protease = '{0}'".format(protease)
     cursor.execute(command)
