@@ -10,6 +10,8 @@ import operator
 import MySQLdb
 import data
 
+WEIGHTS = [4,8,16,35,20,10,5,2]
+
 CODES = {"Ala": "A", "Arg": "R", "Asn": "N", "Asp": "D", "Cys": "C", "Gln": "Q", "Glu": "E",
          "Gly": "G", "His": "H", "Ile": "I", "Leu": "L", "Lys": "K", "Met": "M", "Phe": "F",
          "Pro": "P", "Ser": "S", "Thr": "T", "Trp": "W", "Tyr": "Y", "Val": "V", "Sec": "U",
@@ -40,9 +42,10 @@ def score(data_list): #assigns each cut in data_list a score according to how li
 def new_score(data_list): #assigns each cut in data_list a score according to how likely that cut is (new system)
     scoredict = {}
     for k in data_list.keys():
-        x = data_list[k]
-        #print(x)
-        scoredict[k] = 1*x[3]*x[4] + 0.5*x[2]*x[5] + 0.25*x[1]*x[6] + 0.125*x[0]*x[7]
+        score = 0
+        for i in range(len(data_list[k])):
+            score += data_list[k][i]*WEIGHTS[i]
+        scoredict[k] = score
     return scoredict
 
 def get_data(protease, data): #checks if data is in data.py, adds data to data.py if it's not, returns data
@@ -56,11 +59,12 @@ def get_data(protease, data): #checks if data is in data.py, adds data to data.p
     return data.data[protease]
 
 def calc_table(protease): #gets data from sql, returns a dictionary of how many times the protease cuts after each specific amino-acid
-    conn = MySQLdb.connect(host='localhost',user='root',passwd='xxxxxxx', db='merops121')
+    conn = MySQLdb.connect(host='localhost',user='root',passwd='SH01m7n9i_.', db='merops121')
     cursor = conn.cursor()
     command = "SELECT Site_P4, Site_P3, Site_P2, Site_P1, Site_P1prime, Site_P2prime, Site_P3prime, Site_P4prime FROM Substrate_search WHERE Protease = '{0}'".format(protease)
     cursor.execute(command)
     data_list = cursor.fetchall()
+    print(len(data_list))
     
     if data_list: #checks if sql returned something
         p_data = {} #writes data from sql to a dictionary
@@ -69,9 +73,13 @@ def calc_table(protease): #gets data from sql, returns a dictionary of how many 
         for l in data_list:
             for i in range(8):
                 p_data[translate(l[i])][i] += 1
-        #print(data_list)
+        for k in p_data.keys():
+            for i in range(8):
+                p_data[k][i] /= len(data_list)
     else:
         raise ValueError("Protease named {0} not found".format(protease))
+
+    print(p_data)
     
     return p_data
 
@@ -93,16 +101,16 @@ def lookup(protease, sequence_file, file_format="fasta", **kwargs): #main functi
     cut_dict = {} #creates a dict of all possible cuts and a list of how many times the protease cuts the sequence after that amino-acid
     for i in range(3, len(sequence)-4):
         seq_string = str(i-6) + "/" + sequence[i-3:i+5] + "/" + str(i+2)
-        print(seq_string)
+        #print(seq_string)
         p_string = get_sequence_from_str(seq_string)
-        print(p_string)
+        #print(p_string)
         l = []
         for j in range(len(p_string)):
             l.append(protease_data[p_string[j]][j])
         cut_dict[seq_string] = l
     #print(cut_dict)
         
-    scoredict = score(cut_dict) #scores each cut according to likelihood
+    scoredict = new_score(cut_dict) #scores each cut according to likelihood
     print_results(scoredict) #prints the rusults
     return scoredict
 
