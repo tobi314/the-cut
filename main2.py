@@ -1,7 +1,7 @@
 """
 Version: 1.1
 
-The Script retruns all possible cuts and how likely they are for a specific protease and sequence.
+  The Script retruns all possible cuts and how likely they are for a specific protease and sequence.
 
 
 
