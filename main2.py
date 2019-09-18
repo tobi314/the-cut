@@ -22,7 +22,16 @@ CODES = {"Ala": "A", "Arg": "R", "Asn": "N", "Asp": "D", "Cys": "C", "Gln": "Q",
          "Pro": "P", "Ser": "S", "Thr": "T", "Trp": "W", "Tyr": "Y", "Val": "V", "Sec": "U",
          "Pyl": "O", "Xaa": "X", "Asx": "B", "Glx": "Z", "Xle": "J", "-": "-"}
 
-def _write_data(data): #writes data into data.py file
+
+# WRITES PROTEINASE DATA FOR INTO data.py FILE
+# The relative usage of amino acids for the 8 amino acids surrounding
+# the cleavage position (-4 to +4) is given in %. The format of data.py
+# is a dictionary of dictionaries, where the outer dictionary is a dictionary
+# of proteinases and the inner dictionary a dictionary of amino acid residues.
+# The amino acid residue is the key and the value is a list of 8 numbers,
+# which respresent the  4 amino acids preceeding and following the cleavage
+# site.
+def _write_data(data): #
     f = open("data.py", "w")
     f.write("data = " + data)
     f.close()
@@ -37,14 +46,20 @@ def print_results(r): #sorts results according to score, prints them
     sorted_r = sorted(r.items(), key=operator.itemgetter(1))
     print(sorted_r[::-1])
 
-def score(data_list): #assigns each cut in data_list a score according to how likely that cut is
+# This function is not used anymore.
+# Assigns each cut in data_list a score according to how likely that cut is.
+#
+def score(data_list):
     scoredict = {}
     for k in data_list.keys():
         #print(data_list[k])
         scoredict[k] = data_list[k][3] + data_list[k][4]
     return scoredict
 
-def new_score(data_list): #assigns each cut in data_list a score according to how likely that cut is (new system)
+# This is the heart of the program. It generates a dictionary of all possible cuts within
+# the amino acid sequence.
+# It assigns each cut in data_list a score according to how likely that cut is (new system)
+def new_score(data_list):
     scoredict = {}
     for k in data_list.keys():
         score = 0
@@ -63,26 +78,36 @@ def get_data(protease, data): #checks if data is in data.py, adds data to data.p
          print("ADDED TO DATA")
     return data.data[protease]
 
-def calc_table(protease): #gets data from sql, returns a dictionary of how many times the protease cuts after each specific amino-acid
-    conn = MySQLdb.connect(host='localhost',user='root',passwd='xxxxxx', db='merops121')
+
+# Gets data from the sql database, returns a dictionary of how many times a specific amino acid residue
+# occurs at the positons -4 to +4 relative to the cut site.
+#
+#
+def calc_table(protease):
+    conn = MySQLdb.connect(host='localhost', user='merops_user', passwd='12345678', db='merops121')
     cursor = conn.cursor()
+    # Returns the cleavage context (-4 to +4) for all substrates of a specific proteinase
     command = "SELECT Site_P4, Site_P3, Site_P2, Site_P1, Site_P1prime, Site_P2prime, Site_P3prime, Site_P4prime FROM Substrate_search WHERE Protease = '{0}'".format(protease)
     cursor.execute(command)
-    data_list = cursor.fetchall()
-    print(len(data_list))
+    substrate_list = cursor.fetchall()
+    print('Received {0} rows from the following database request:\n{1}'.format(len(substrate_list), command))
 
-    if data_list: #checks if sql returned something
+    if substrate_list: #checks if sql returned something
         p_data = {} #writes data from sql to a dictionary
         for v in CODES.values():
             p_data[v] = [0, 0, 0, 0, 0, 0 , 0, 0]
-        for l in data_list:
+        # Loop through list of substrates
+        for substrate in substrate_list:
             for i in range(8):
-                p_data[translate(l[i])][i] += 1
+                p_data[translate(substrate[i])][i] += 1
         for k in p_data.keys():
             for i in range(8):
-                p_data[k][i] /= len(data_list)
+                # Because different proteinases have different numbers of known
+                # substrates, we need to divide by the number of substrates
+                # in order to make values comparable between proteinases.
+                p_data[k][i] /= len(substrate_list)
     else:
-        raise ValueError("Protease named {0} not found".format(protease))
+        raise ValueError('Protease named {0} not found'.format(protease))
 
     print(p_data)
 
@@ -137,5 +162,7 @@ def lookup(protease, sequence_file, file_format="fasta", **kwargs): #main functi
     return scoredict
 
 if __name__ == "__main__":
-    #demo
+    # Demo with cached proteinase
     data_list = lookup('kallikrein-related peptidase 3', "P49767.fasta", nocut=21)
+    # Demo with mysql lookup
+    data_list = lookup('matrix metallopeptidase-9', "P49767.fasta", nocut=21)
