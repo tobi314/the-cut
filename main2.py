@@ -94,18 +94,19 @@ def calc_table(protease):
 
     if substrate_list: #checks if sql returned something
         p_data = {} #writes data from sql to a dictionary
-        for v in CODES.values():
-            p_data[v] = [0, 0, 0, 0, 0, 0 , 0, 0]
+        for aminoacid in CODES.values():
+            p_data[aminoacid] = [0, 0, 0, 0, 0, 0 , 0, 0]
         # Loop through list of substrates
         for substrate in substrate_list:
+            # Loop through aminoacid positions -4 to +4 (0 does not exist)
             for i in range(8):
                 p_data[translate(substrate[i])][i] += 1
-        for k in p_data.keys():
+        # Because different proteinases have different numbers of known
+        # substrates, we need to divide by the number of substrates
+        # in order to make values comparable between proteinases.
+        for aminoacid in p_data.keys():
             for i in range(8):
-                # Because different proteinases have different numbers of known
-                # substrates, we need to divide by the number of substrates
-                # in order to make values comparable between proteinases.
-                p_data[k][i] /= len(substrate_list)
+                p_data[aminoacid][i] /= len(substrate_list)
     else:
         raise ValueError('Protease named {0} not found'.format(protease))
 
