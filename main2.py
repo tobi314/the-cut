@@ -45,6 +45,7 @@ def translate(_3letter): #translates 3-letter-code into 1-letter-code
 def print_results(r): #sorts results according to score, prints them
     sorted_r = sorted(r.items(), key=operator.itemgetter(1))
     print(sorted_r[::-1])
+    print('\n')
 
 # This function is not used anymore.
 # Assigns each cut in data_list a score according to how likely that cut is.
@@ -70,12 +71,12 @@ def new_score(data_list):
 
 def get_data(protease, data): #checks if data is in data.py, adds data to data.py if it's not, returns data
     if protease in data.data:
-        print("FOUND IN DATA")
+        print('FOUND IN DATA {0}'.format(protease))
     else:
          table = calc_table(protease)
          data.data[protease] = table
          _write_data(str(data.data))
-         print("ADDED TO DATA")
+         print('ADDED TO DATA {0}'.format(protease))
     return data.data[protease]
 
 
@@ -167,3 +168,5 @@ if __name__ == "__main__":
     data_list = lookup('kallikrein-related peptidase 3', "P49767.fasta", nocut=21)
     # Demo with mysql lookup
     data_list = lookup('matrix metallopeptidase-9', "P49767.fasta", nocut=21)
+    # Demo with mysql lookup
+    data_list = lookup('thrombin', "P49767.fasta", nocut=21)
